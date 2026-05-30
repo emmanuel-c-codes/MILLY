@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | MILLY STORE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAz4R3bBfz9XseM2tAv3koBH12XmsNvhRE",
+            authDomain: "milly-store.firebaseapp.com",
+            projectId: "milly-store",
+            storageBucket: "milly-store.firebasestorage.app",
+            messagingSenderId: "693622566931",
+            appId: "1:693622566931:web:ef0fda149cd4a45dff8fe6",
+            measurementId: "G-1WZM9J7B5T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Sidebar toggle
+        window.toggleSidebar = () => { 
+            document.getElementById('sidebar').classList.toggle('-translate-x-full'); 
+        };
+
+        // Form Submission
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button');
+            btn.innerText = "PUSHING...";
+            btn.disabled = true;
+
+            try {
+                await addDoc(collection(db, "products"), {
+                    image: document.getElementById('imgUrl').value,
+                    name: document.getElementById('pName').value,
+                    price: Number(document.getElementById('pPrice').value),
+                    stock: Number(document.getElementById('pStock').value),
+                    color: document.getElementById('pColor').value || "Default",
+                    createdAt: new Date()
+                });
+
+                alert('Product successfully pushed to Firebase database!');
+                e.target.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Failed to push. Ensure Firestore Rules are set to 'allow read, write: if true'");
+            } finally {
+                btn.innerText = "PUSH TO STORE";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</head>
+<body class="bg-stone-50 min-h-screen flex">
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-stone-950 text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
+        <div class="p-6 text-2xl font-black text-[#00966b]">MILLY ADMIN</div>
+        <nav class="mt-6 px-4 space-y-2">
+            <a href="#" class="block py-2.5 px-4 rounded bg-[#00966b]">Add Product</a>
+            <a href="#" class="block py-2.5 px-4 rounded hover:bg-stone-800">Manage Inventory</a>
+            <a href="#" class="block py-2.5 px-4 rounded hover:bg-stone-800">Orders</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 lg:ml-64 p-4 lg:p-8">
+        <div class="lg:hidden flex items-center justify-between mb-6">
+            <button onclick="toggleSidebar()" class="p-2 bg-stone-900 text-white rounded">Menu</button>
+            <div class="text-xl font-bold">Add Product</div>
+        </div>
+
+        <div class="max-w-2xl bg-white p-8 rounded-2xl shadow-sm border border-stone-100">
+            <h2 class="text-2xl font-bold mb-6">Upload New Product</h2>
+            <form id="productForm" class="space-y-4">
+                <input type="text" id="imgUrl" placeholder="Image URL (Hosted Link)" class="w-full p-3 border rounded-lg" required>
+                <input type="text" id="pName" placeholder="Product Name" class="w-full p-3 border rounded-lg" required>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="pPrice" placeholder="Price (₦)" class="w-full p-3 border rounded-lg" required>
+                    <input type="number" id="pStock" placeholder="Stock Quantity" class="w-full p-3 border rounded-lg" required>
+                </div>
+                <input type="text" id="pColor" placeholder="Colors (e.g. Red, Blue, or leave empty for default)" class="w-full p-3 border rounded-lg">
+                <button type="submit" class="w-full bg-[#00966b] text-white py-4 rounded-xl font-bold hover:bg-[#007a57] transition-all">
+                    PUSH TO STORE
+                </button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

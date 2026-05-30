@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MILLY STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAz4R3bBfz9XseM2tAv3koBH12XmsNvhRE",
+            authDomain: "milly-store.firebaseapp.com",
+            projectId: "milly-store",
+            storageBucket: "milly-store.firebasestorage.app",
+            messagingSenderId: "693622566931",
+            appId: "1:693622566931:web:ef0fda149cd4a45dff8fe6",
+            measurementId: "G-1WZM9J7B5T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+
+        // Expose to window for the global functions
+        window.db = db;
+        window.collection = collection;
+        window.onSnapshot = onSnapshot;
+    </script>
     <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-white text-stone-900 dark:bg-stone-950 dark:text-stone-100 min-h-screen transition-colors duration-300">
@@ -16,9 +40,7 @@
     <nav class="sticky top-0 z-40 bg-[#0f172a] border-b border-stone-800">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-16 sm:h-20 flex items-center justify-between gap-3 sm:gap-4">
             <a href="#" class="text-lg sm:text-2xl font-black text-white shrink-0">MILLY<span class="text-[#00966b]">STORE</span></a>
-            
             <input type="text" id="search-input" onkeyup="filterProducts()" placeholder="Search products..." class="w-full max-w-[200px] sm:max-w-md bg-stone-800 text-white rounded-lg sm:rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[#00966b]">
-
             <div class="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button onclick="toggleTheme()" class="p-2 text-stone-300 hover:text-white">
                     <svg class="w-5 h-5 theme-sun-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -62,7 +84,16 @@
     </div>
 
     <script>
+        let allProducts = [];
         let cart = JSON.parse(localStorage.getItem('millyCart') || '[]');
+
+        // Firebase Live Sync
+        setTimeout(() => {
+            onSnapshot(collection(window.db, "products"), (snapshot) => {
+                allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderGrid(allProducts);
+            });
+        }, 1000);
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
@@ -78,8 +109,7 @@
 
         function filterProducts() {
             const query = document.getElementById('search-input').value.toLowerCase();
-            const products = JSON.parse(localStorage.getItem('millyStoreProducts') || '[]');
-            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query));
             renderGrid(filtered);
         }
 
@@ -97,8 +127,7 @@
         }
 
         function addToCart(index) {
-            const products = JSON.parse(localStorage.getItem('millyStoreProducts') || '[]');
-            cart.push({...products[index], qty: 1});
+            cart.push({...allProducts[index], qty: 1});
             localStorage.setItem('millyCart', JSON.stringify(cart));
             renderCart();
         }
@@ -148,7 +177,7 @@
             alert("Proceeding to checkout for total: " + document.getElementById('cart-total').innerText);
         }
 
-        window.onload = () => { renderGrid(JSON.parse(localStorage.getItem('millyStoreProducts') || '[]')); renderCart(); };
+        renderCart();
     </script>
 </body>
 </html>
